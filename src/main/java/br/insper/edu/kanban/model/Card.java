@@ -4,9 +4,12 @@ import br.insper.edu.kanban.usuario.Usuario;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 
 @Entity
-public class Card {
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(name = "tipo")
+public abstract class Card {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -36,12 +39,16 @@ public class Card {
     protected Card() {
     }
 
-    public Card(String titulo, String descricao, Prioridade prioridade) {
+    protected Card(String titulo, String descricao, Prioridade prioridade) {
         editar(titulo, descricao);
         if (prioridade != null) {
             this.prioridade = prioridade;
         }
     }
+
+    public abstract int esforco();
+
+    public abstract String getTipo();
 
     @PrePersist
     void aoCriar() {
@@ -126,5 +133,127 @@ public class Card {
 
     public LocalDateTime getDataAtualizacao() {
         return dataAtualizacao;
+    }
+
+    @Entity(name = "Tarefa")
+    @DiscriminatorValue("TAREFA")
+    public static class Tarefa extends Card {
+
+        private Integer estimativaHoras;
+
+        protected Tarefa() {
+        }
+
+        public Tarefa(String titulo, String descricao, Prioridade prioridade, Integer estimativaHoras) {
+            super(titulo, descricao, prioridade);
+            definirEstimativa(estimativaHoras);
+        }
+
+        public void definirEstimativa(Integer horas) {
+            if (horas != null && horas < 1) {
+                throw new IllegalArgumentException("A estimativa deve ser de pelo menos 1 hora");
+            }
+            this.estimativaHoras = horas;
+        }
+
+        @Override
+        public int esforco() {
+            return estimativaHoras == null ? 1 : (int) Math.ceil(estimativaHoras / 4.0);
+        }
+
+        @Override
+        public String getTipo() {
+            return "TAREFA";
+        }
+
+        public Integer getEstimativaHoras() {
+            return estimativaHoras;
+        }
+    }
+    @Entity(name = "Bug")
+    @DiscriminatorValue("BUG")
+    public static class Bug extends Card {
+
+        private boolean critico;
+
+        @Column(length = 2000)
+        private String passosReproducao;
+
+        protected Bug() {}
+
+        public Bug(String titulo, String descricao, Prioridade prioridade, boolean critico, String passosReproducao) {
+            super(titulo, descricao, critico ? Prioridade.ALTA : prioridade);
+            this.critico = critico;
+            this.passosReproducao = passosReproducao;
+        }
+
+        @Override
+        public void alterarPrioridade(Prioridade prioridade) {
+            if (isCritico() && prioridade != Prioridade.ALTA) {
+                throw new IllegalStateException("Bug crítico deve ter prioridade ALTA");
+            }
+            super.alterarPrioridade(prioridade);
+        }
+
+        public void marcarComoCritico() {
+            this.critico = true;
+            super.alterarPrioridade(Prioridade.ALTA);
+        }
+
+        @Override
+        public int esforco() {
+            return isCritico() ? 5 : 2;
+        }
+
+        @Override
+        public String getTipo() {
+            return "BUG";
+        }
+
+        public boolean isCritico() {
+            return Boolean.TRUE.equals(critico);
+        }
+
+        public String getPassosReproducao() {
+            return passosReproducao;
+        }
+    }
+
+    @Entity(name = "Melhoria")
+    @DiscriminatorValue("MELHORIA")
+    public static class Melhoria extends Card {
+
+        private static final Set<Integer> FIBONACCI = Set.of(1, 2, 3, 5, 8, 13);
+
+        private Integer storyPoints;
+
+        protected Melhoria() {
+        }
+
+        public Melhoria(String titulo, String descricao, Prioridade prioridade, Integer storyPoints) {
+            super(titulo, descricao, prioridade);
+            definirStoryPoints(storyPoints);
+        }
+
+        public void definirStoryPoints(Integer pontos) {
+            if (pontos == null || !FIBONACCI.contains(pontos)) {
+                throw new IllegalArgumentException("Story points devem ser 1, 2, 3, 5, 8 ou 13");
+            }
+            this.storyPoints = pontos;
+        }
+
+        @Override
+        public int esforco() {
+            return storyPoints;
+        }
+
+        @Override
+        public String getTipo() {
+            return "MELHORIA";
+        }
+
+        public Integer getStoryPoints() {
+            return storyPoints;
+        }
     }
 }
