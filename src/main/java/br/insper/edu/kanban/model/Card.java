@@ -4,6 +4,8 @@ import br.insper.edu.kanban.usuario.Usuario;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -33,6 +35,22 @@ public abstract class Card {
     @JoinColumn(name = "id_coluna")
     private Coluna coluna;
 
+    @OneToMany(
+            mappedBy = "card",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    @OrderBy("id ASC")
+    private List<Checklist> checklists = new ArrayList<>();
+
+    @OneToMany(
+            mappedBy = "card",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    @OrderBy("dataCriacao ASC, id ASC")
+    private List<Comentario> comentarios = new ArrayList<>();
+
     private LocalDateTime dataCriacao;
     private LocalDateTime dataAtualizacao;
 
@@ -41,6 +59,7 @@ public abstract class Card {
 
     protected Card(String titulo, String descricao, Prioridade prioridade) {
         editar(titulo, descricao);
+
         if (prioridade != null) {
             this.prioridade = prioridade;
         }
@@ -58,27 +77,42 @@ public abstract class Card {
 
     public void moverPara(Coluna destino) {
         if (destino == null) {
-            throw new IllegalArgumentException("Coluna de destino obrigatória");
+            throw new IllegalArgumentException(
+                    "Coluna de destino obrigatória"
+            );
         }
+
         if (destino == coluna) {
-            throw new IllegalStateException("O card já está na coluna " + destino.getNome());
+            throw new IllegalStateException(
+                    "O card já está na coluna " + destino.getNome()
+            );
         }
+
         if (!destino.pertenceAo(coluna.getQuadro())) {
-            throw new IllegalArgumentException("Não é possível mover o card para outro quadro");
+            throw new IllegalArgumentException(
+                    "Não é possível mover o card para outro quadro"
+            );
         }
 
         Coluna origem = coluna;
-        destino.adicionarCard(this);   // valida o WIP antes de mexer na origem
+
+        // Valida o WIP antes de mexer na origem.
+        destino.adicionarCard(this);
         origem.removerCard(this);
+
         tocar();
     }
 
     public void editar(String titulo, String descricao) {
         if (titulo == null || titulo.isBlank()) {
-            throw new IllegalArgumentException("O título do card é obrigatório");
+            throw new IllegalArgumentException(
+                    "O título do card é obrigatório"
+            );
         }
+
         this.titulo = titulo.trim();
         this.descricao = descricao;
+
         tocar();
     }
 
@@ -86,13 +120,35 @@ public abstract class Card {
         if (prioridade == null) {
             throw new IllegalArgumentException("Prioridade obrigatória");
         }
+
         this.prioridade = prioridade;
+
         tocar();
     }
 
     public void atribuirResponsavel(Usuario usuario) {
-        this.responsavel = usuario;   // null remove o responsável
+        // null remove o responsável.
+        this.responsavel = usuario;
+
         tocar();
+    }
+
+    public Checklist criarChecklist(String titulo) {
+        Checklist checklist = new Checklist(titulo, this);
+
+        checklists.add(checklist);
+        tocar();
+
+        return checklist;
+    }
+
+    public Comentario adicionarComentario(String texto, Usuario autor) {
+        Comentario comentario = new Comentario(texto, autor, this);
+
+        comentarios.add(comentario);
+        tocar();
+
+        return comentario;
     }
 
     private void tocar() {
@@ -127,6 +183,14 @@ public abstract class Card {
         return coluna;
     }
 
+    public List<Checklist> getChecklists() {
+        return List.copyOf(checklists);
+    }
+
+    public List<Comentario> getComentarios() {
+        return List.copyOf(comentarios);
+    }
+
     public LocalDateTime getDataCriacao() {
         return dataCriacao;
     }
@@ -144,21 +208,31 @@ public abstract class Card {
         protected Tarefa() {
         }
 
-        public Tarefa(String titulo, String descricao, Prioridade prioridade, Integer estimativaHoras) {
+        public Tarefa(
+                String titulo,
+                String descricao,
+                Prioridade prioridade,
+                Integer estimativaHoras
+        ) {
             super(titulo, descricao, prioridade);
             definirEstimativa(estimativaHoras);
         }
 
         public void definirEstimativa(Integer horas) {
             if (horas != null && horas < 1) {
-                throw new IllegalArgumentException("A estimativa deve ser de pelo menos 1 hora");
+                throw new IllegalArgumentException(
+                        "A estimativa deve ser de pelo menos 1 hora"
+                );
             }
+
             this.estimativaHoras = horas;
         }
 
         @Override
         public int esforco() {
-            return estimativaHoras == null ? 1 : (int) Math.ceil(estimativaHoras / 4.0);
+            return estimativaHoras == null
+                    ? 1
+                    : (int) Math.ceil(estimativaHoras / 4.0);
         }
 
         @Override
@@ -170,6 +244,7 @@ public abstract class Card {
             return estimativaHoras;
         }
     }
+
     @Entity(name = "Bug")
     @DiscriminatorValue("BUG")
     public static class Bug extends Card {
@@ -179,10 +254,22 @@ public abstract class Card {
         @Column(length = 2000)
         private String passosReproducao;
 
-        protected Bug() {}
+        protected Bug() {
+        }
 
-        public Bug(String titulo, String descricao, Prioridade prioridade, boolean critico, String passosReproducao) {
-            super(titulo, descricao, critico ? Prioridade.ALTA : prioridade);
+        public Bug(
+                String titulo,
+                String descricao,
+                Prioridade prioridade,
+                boolean critico,
+                String passosReproducao
+        ) {
+            super(
+                    titulo,
+                    descricao,
+                    critico ? Prioridade.ALTA : prioridade
+            );
+
             this.critico = critico;
             this.passosReproducao = passosReproducao;
         }
@@ -190,8 +277,11 @@ public abstract class Card {
         @Override
         public void alterarPrioridade(Prioridade prioridade) {
             if (isCritico() && prioridade != Prioridade.ALTA) {
-                throw new IllegalStateException("Bug crítico deve ter prioridade ALTA");
+                throw new IllegalStateException(
+                        "Bug crítico deve ter prioridade ALTA"
+                );
             }
+
             super.alterarPrioridade(prioridade);
         }
 
@@ -223,22 +313,31 @@ public abstract class Card {
     @DiscriminatorValue("MELHORIA")
     public static class Melhoria extends Card {
 
-        private static final Set<Integer> FIBONACCI = Set.of(1, 2, 3, 5, 8, 13);
+        private static final Set<Integer> FIBONACCI =
+                Set.of(1, 2, 3, 5, 8, 13);
 
         private Integer storyPoints;
 
         protected Melhoria() {
         }
 
-        public Melhoria(String titulo, String descricao, Prioridade prioridade, Integer storyPoints) {
+        public Melhoria(
+                String titulo,
+                String descricao,
+                Prioridade prioridade,
+                Integer storyPoints
+        ) {
             super(titulo, descricao, prioridade);
             definirStoryPoints(storyPoints);
         }
 
         public void definirStoryPoints(Integer pontos) {
             if (pontos == null || !FIBONACCI.contains(pontos)) {
-                throw new IllegalArgumentException("Story points devem ser 1, 2, 3, 5, 8 ou 13");
+                throw new IllegalArgumentException(
+                        "Story points devem ser 1, 2, 3, 5, 8 ou 13"
+                );
             }
+
             this.storyPoints = pontos;
         }
 
