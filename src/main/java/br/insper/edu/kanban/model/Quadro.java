@@ -4,12 +4,13 @@ import jakarta.persistence.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 public class Quadro {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
     @Column(nullable = false)
     private String nome;
@@ -19,6 +20,16 @@ public class Quadro {
     @OneToMany(mappedBy = "quadro", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("posicao")
     private List<Coluna> colunas = new ArrayList<>();
+
+    @OneToMany(mappedBy = "quadro", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<MembroQuadro> membros = new ArrayList<>();
+
+    @OneToMany(mappedBy = "quadro", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Etiqueta> etiquetas = new ArrayList<>();
+
+    public List<Etiqueta> getEtiquetas() {
+        return etiquetas;
+    }
 
     public Quadro() {}
 
@@ -31,9 +42,10 @@ public class Quadro {
         if (nome == null || nome.isBlank()) {
             throw new IllegalArgumentException("O nome da coluna é obrigatório");
         }
-        boolean repetido = colunas.stream().anyMatch(c -> c.getNome().equalsIgnoreCase(nome.trim()));
-        if (repetido) {
-            throw new IllegalStateException("Já existe uma coluna chamada " + nome.trim() + " neste quadro");
+        for (Coluna coluna : colunas) {
+            if (coluna.getNome().equalsIgnoreCase(nome.trim())) {
+                throw new IllegalStateException("Já existe uma coluna chamada " + nome.trim());
+            }
         }
 
         Coluna coluna = new Coluna(nome.trim(), colunas.size(), limiteWip);
@@ -56,7 +68,11 @@ public class Quadro {
     }
 
     public int quantidadeCards() {
-        return colunas.stream().mapToInt(Coluna::quantidadeCards).sum();
+        int total = 0;
+        for (Coluna coluna : colunas) {
+            total += coluna.quantidadeCards();
+        }
+        return total;
     }
 
     public void renomear(String nome) {
@@ -66,11 +82,11 @@ public class Quadro {
         this.nome = nome.trim();
     }
 
-    public long getId() {
+    public UUID getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(UUID id) {
         this.id = id;
     }
 
@@ -79,7 +95,7 @@ public class Quadro {
     }
 
     public void setNome(String nome) {
-        this.nome = nome;
+        renomear(nome);
     }
 
     public String getDescricao() {

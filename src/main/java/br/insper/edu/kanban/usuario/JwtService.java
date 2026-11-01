@@ -1,4 +1,4 @@
-package br.insper.edu.kanban.service;
+package br.insper.edu.kanban.usuario;
 
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;

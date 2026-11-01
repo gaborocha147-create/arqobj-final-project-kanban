@@ -1,61 +1,72 @@
 package br.insper.edu.kanban.model;
 
+import br.insper.edu.kanban.usuario.Usuario;
+import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+@Entity
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"id_quadro", "id_usuario"}))
 public class MembroQuadro {
-    private String id;
-    private String usuario;
+    public enum Papel {
+        ADMIN, MEMBRO
+    }
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
+
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "id_usuario", nullable = false)
+    private Usuario usuario;
+
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "id_quadro", nullable = false)
     private Quadro quadro;
-    private String papel;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Papel papel;
+
+    @Column(nullable = false, updatable = false)
     private LocalDateTime dataEntrada;
 
-    public MembroQuadro(String usuario, Quadro quadro, String papel) {
-        this.id = UUID.randomUUID().toString();
+    protected MembroQuadro() {}
+
+    public MembroQuadro(Usuario usuario, Quadro quadro, Papel papel) {
+        if (usuario == null || quadro == null) {
+            throw new IllegalArgumentException("Usuário e quadro obrigatórios");
+        }
         this.usuario = usuario;
         this.quadro = quadro;
-        this.papel = papel;
+        alterarPapel(papel);
         this.dataEntrada = LocalDateTime.now();
     }
 
-    public String getId() {
+    public void alterarPapel(Papel papel) {
+        if (papel == null) {
+            throw new IllegalArgumentException("Papel obrigatório");
+        }
+        this.papel = papel;
+    }
+
+    public UUID getId() {
         return id;
     }
 
-    public String getUsuario() {
+    public Usuario getUsuario() {
         return usuario;
-    }
-
-    public void setUsuario(String usuario) {
-        this.usuario = usuario;
     }
 
     public Quadro getQuadro() {
         return quadro;
     }
 
-    public void setQuadro(Quadro quadro) {
-        this.quadro = quadro;
-    }
-
-    public String getPapel() {
+    public Papel getPapel() {
         return papel;
-    }
-
-    public void setPapel(String papel) {
-        this.papel = papel;
     }
 
     public LocalDateTime getDataEntrada() {
         return dataEntrada;
-    }
-
-    public void alterarPapel(String novoPapel) {
-        if (novoPapel == null ||
-                (!novoPapel.equals("ADMIN") && !novoPapel.equals("MEMBRO"))) {
-            throw new IllegalArgumentException("Papel inválido");
-        }
-
-        this.papel = novoPapel;
     }
 }

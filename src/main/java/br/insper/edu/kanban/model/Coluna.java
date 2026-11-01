@@ -1,6 +1,7 @@
 package br.insper.edu.kanban.model;
 
 import jakarta.persistence.*;
+import java.util.UUID;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -9,8 +10,8 @@ import java.util.Objects;
 @Entity
 public class Coluna {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
     @Column(nullable = false)
     private String nome;
@@ -68,6 +69,14 @@ public class Coluna {
         return quadro != null && outro != null && Objects.equals(quadro.getId(), outro.getId());
     }
 
+    public List<Card> getCards() {
+        return List.copyOf(cards);
+    }
+
+    public Integer getLimiteWip() {
+        return limiteWip;
+    }
+
     public int quantidadeCards() {
         return cards.size();
     }
@@ -79,11 +88,11 @@ public class Coluna {
         this.nome = nome.trim();
     }
 
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(UUID id) {
         this.id = id;
     }
 

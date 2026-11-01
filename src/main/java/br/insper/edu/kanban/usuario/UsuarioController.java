@@ -1,11 +1,7 @@
 package br.insper.edu.kanban.usuario;
 
-import br.insper.edu.kanban.service.JwtService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -23,23 +19,17 @@ public class UsuarioController {
         this.jwtService = jwtService;
     }
 
-    public record Credenciais(
-            @NotBlank @Email @Size(max = 254) String email,
-            @NotBlank @Size(max = 72) String senha) {}
-    public record UsuarioView(Long id, String email) {}
-    public record TokenView(String token, String tipo) {}
-
     @PostMapping("/usuarios")
     @SecurityRequirements
-    public ResponseEntity<UsuarioView> cadastrar(@Valid @RequestBody Credenciais dados) {
-        Usuario usuario = service.cadastrar(dados.email(), dados.senha());
+    public ResponseEntity<UsuarioView> cadastrar(@Valid @RequestBody CadastroUsuarioRequest dados) {
+        Usuario usuario = service.cadastrar(dados.getEmail(), dados.getSenha());
         return ResponseEntity.created(URI.create("/usuarios/" + usuario.getId()))
-                .body(new UsuarioView(usuario.getId(), usuario.getEmail()));
+                .body(new UsuarioView(usuario));
     }
 
     @PostMapping("/login")
     @SecurityRequirements
-    public TokenView login(@Valid @RequestBody Credenciais dados) {
-        return new TokenView(jwtService.generateToken(service.autenticar(dados.email(), dados.senha())), "Bearer");
+    public LoginResponse login(@Valid @RequestBody LoginRequest dados) {
+        return new LoginResponse(jwtService.generateToken(service.autenticar(dados.getEmail(), dados.getSenha())), "Bearer");
     }
 }

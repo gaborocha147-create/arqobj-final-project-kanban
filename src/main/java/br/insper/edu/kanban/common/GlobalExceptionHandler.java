@@ -15,6 +15,31 @@ import java.util.List;
 
 @RestControllerAdvice(basePackages = "br.insper.edu.kanban")
 public class GlobalExceptionHandler {
+    @ExceptionHandler(RecursoNaoEncontradoException.class)
+    public ResponseEntity<ErrorResponseDTO> handleNotFound(RecursoNaoEncontradoException ex) {
+        return resposta(HttpStatus.NOT_FOUND, ex.getMessage(), List.of());
+    }
+
+    @ExceptionHandler(AcessoNegadoException.class)
+    public ResponseEntity<ErrorResponseDTO> handleForbidden(AcessoNegadoException ex) {
+        return resposta(HttpStatus.FORBIDDEN, ex.getMessage(), List.of());
+    }
+
+    @ExceptionHandler(CredenciaisInvalidasException.class)
+    public ResponseEntity<ErrorResponseDTO> handleUnauthorized(CredenciaisInvalidasException ex) {
+        return resposta(HttpStatus.UNAUTHORIZED, ex.getMessage(), List.of());
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponseDTO> handleInvalidArgument(IllegalArgumentException ex) {
+        return resposta(HttpStatus.BAD_REQUEST, ex.getMessage(), List.of());
+    }
+
+    @ExceptionHandler({ConflitoException.class, IllegalStateException.class})
+    public ResponseEntity<ErrorResponseDTO> handleBusinessConflict(RuntimeException ex) {
+        return resposta(HttpStatus.CONFLICT, ex.getMessage(), List.of());
+    }
+
     private ResponseEntity<ErrorResponseDTO> resposta(HttpStatusCode status, String message, List<String> details) {
         ErrorResponseDTO error = new ErrorResponseDTO();
         error.setStatus(status.value());

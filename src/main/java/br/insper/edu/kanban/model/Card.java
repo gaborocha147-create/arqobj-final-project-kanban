@@ -1,12 +1,15 @@
 package br.insper.edu.kanban.model;
 
 import br.insper.edu.kanban.usuario.Usuario;
+
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 @Entity
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
@@ -14,8 +17,8 @@ import java.util.Set;
 public abstract class Card {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
     @Column(nullable = false)
     private String titulo;
@@ -35,27 +38,51 @@ public abstract class Card {
     @JoinColumn(name = "id_coluna")
     private Coluna coluna;
 
-    @OneToMany(
-            mappedBy = "card",
-            cascade = CascadeType.ALL,
-            orphanRemoval = true
-    )
+    @OneToMany(mappedBy = "card", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("id ASC")
     private List<Checklist> checklists = new ArrayList<>();
 
-    @OneToMany(
-            mappedBy = "card",
-            cascade = CascadeType.ALL,
-            orphanRemoval = true
-    )
+    @OneToMany(mappedBy = "card", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("dataCriacao ASC, id ASC")
     private List<Comentario> comentarios = new ArrayList<>();
+
+    @ManyToMany
+    @JoinTable(
+            name = "card_etiqueta",
+            joinColumns = @JoinColumn(name = "id_card"),
+            inverseJoinColumns = @JoinColumn(name = "id_etiqueta"))
+    private Set<Etiqueta> etiquetas = new HashSet<>();
+
+    public Set<Etiqueta> getEtiquetas() {
+        return etiquetas;
+    }
+
+    public void adicionarEtiqueta(Etiqueta etiqueta) {
+        if (!coluna.pertenceAo(etiqueta.getQuadro()))
+            throw new IllegalArgumentException("Etiqueta deve pertencer ao quadro do card");
+        etiquetas.add(etiqueta);
+        tocar();
+    }
+
+    public void removerEtiqueta(Etiqueta etiqueta) {
+        etiquetas.remove(etiqueta);
+        tocar();
+    }
+
+    public void removerChecklist(Checklist checklist) {
+        checklists.remove(checklist);
+        tocar();
+    }
+
+    public void removerComentario(Comentario comentario) {
+        comentarios.remove(comentario);
+        tocar();
+    }
 
     private LocalDateTime dataCriacao;
     private LocalDateTime dataAtualizacao;
 
-    protected Card() {
-    }
+    protected Card() {}
 
     protected Card(String titulo, String descricao, Prioridade prioridade) {
         editar(titulo, descricao);
@@ -77,26 +104,15 @@ public abstract class Card {
 
     public void moverPara(Coluna destino) {
         if (destino == null) {
-            throw new IllegalArgumentException(
-                    "Coluna de destino obrigatória"
-            );
+            throw new IllegalArgumentException("Coluna de destino obrigatória");
         }
-
         if (destino == coluna) {
-            throw new IllegalStateException(
-                    "O card já está na coluna " + destino.getNome()
-            );
+            throw new IllegalStateException("O card já está na coluna " + destino.getNome());
         }
-
         if (!destino.pertenceAo(coluna.getQuadro())) {
-            throw new IllegalArgumentException(
-                    "Não é possível mover o card para outro quadro"
-            );
+            throw new IllegalArgumentException("Não é possível mover o card para outro quadro");
         }
-
         Coluna origem = coluna;
-
-        // Valida o WIP antes de mexer na origem.
         destino.adicionarCard(this);
         origem.removerCard(this);
 
@@ -105,14 +121,10 @@ public abstract class Card {
 
     public void editar(String titulo, String descricao) {
         if (titulo == null || titulo.isBlank()) {
-            throw new IllegalArgumentException(
-                    "O título do card é obrigatório"
-            );
+            throw new IllegalArgumentException("O título do card é obrigatório");
         }
-
         this.titulo = titulo.trim();
         this.descricao = descricao;
-
         tocar();
     }
 
@@ -120,16 +132,12 @@ public abstract class Card {
         if (prioridade == null) {
             throw new IllegalArgumentException("Prioridade obrigatória");
         }
-
         this.prioridade = prioridade;
-
         tocar();
     }
 
     public void atribuirResponsavel(Usuario usuario) {
-        // null remove o responsável.
         this.responsavel = usuario;
-
         tocar();
     }
 
@@ -151,15 +159,15 @@ public abstract class Card {
         return comentario;
     }
 
-    private void tocar() {
+    protected void tocar() {
         dataAtualizacao = LocalDateTime.now();
     }
 
-    void setColuna(Coluna coluna) {
+    public void setColuna(Coluna coluna) {
         this.coluna = coluna;
     }
 
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
 
@@ -184,11 +192,11 @@ public abstract class Card {
     }
 
     public List<Checklist> getChecklists() {
-        return List.copyOf(checklists);
+        return checklists;
     }
 
     public List<Comentario> getComentarios() {
-        return List.copyOf(comentarios);
+        return comentarios;
     }
 
     public LocalDateTime getDataCriacao() {
@@ -197,162 +205,5 @@ public abstract class Card {
 
     public LocalDateTime getDataAtualizacao() {
         return dataAtualizacao;
-    }
-
-    @Entity(name = "Tarefa")
-    @DiscriminatorValue("TAREFA")
-    public static class Tarefa extends Card {
-
-        private Integer estimativaHoras;
-
-        protected Tarefa() {
-        }
-
-        public Tarefa(
-                String titulo,
-                String descricao,
-                Prioridade prioridade,
-                Integer estimativaHoras
-        ) {
-            super(titulo, descricao, prioridade);
-            definirEstimativa(estimativaHoras);
-        }
-
-        public void definirEstimativa(Integer horas) {
-            if (horas != null && horas < 1) {
-                throw new IllegalArgumentException(
-                        "A estimativa deve ser de pelo menos 1 hora"
-                );
-            }
-
-            this.estimativaHoras = horas;
-        }
-
-        @Override
-        public int esforco() {
-            return estimativaHoras == null
-                    ? 1
-                    : (int) Math.ceil(estimativaHoras / 4.0);
-        }
-
-        @Override
-        public String getTipo() {
-            return "TAREFA";
-        }
-
-        public Integer getEstimativaHoras() {
-            return estimativaHoras;
-        }
-    }
-
-    @Entity(name = "Bug")
-    @DiscriminatorValue("BUG")
-    public static class Bug extends Card {
-
-        private boolean critico;
-
-        @Column(length = 2000)
-        private String passosReproducao;
-
-        protected Bug() {
-        }
-
-        public Bug(
-                String titulo,
-                String descricao,
-                Prioridade prioridade,
-                boolean critico,
-                String passosReproducao
-        ) {
-            super(
-                    titulo,
-                    descricao,
-                    critico ? Prioridade.ALTA : prioridade
-            );
-
-            this.critico = critico;
-            this.passosReproducao = passosReproducao;
-        }
-
-        @Override
-        public void alterarPrioridade(Prioridade prioridade) {
-            if (isCritico() && prioridade != Prioridade.ALTA) {
-                throw new IllegalStateException(
-                        "Bug crítico deve ter prioridade ALTA"
-                );
-            }
-
-            super.alterarPrioridade(prioridade);
-        }
-
-        public void marcarComoCritico() {
-            this.critico = true;
-            super.alterarPrioridade(Prioridade.ALTA);
-        }
-
-        @Override
-        public int esforco() {
-            return isCritico() ? 5 : 2;
-        }
-
-        @Override
-        public String getTipo() {
-            return "BUG";
-        }
-
-        public boolean isCritico() {
-            return Boolean.TRUE.equals(critico);
-        }
-
-        public String getPassosReproducao() {
-            return passosReproducao;
-        }
-    }
-
-    @Entity(name = "Melhoria")
-    @DiscriminatorValue("MELHORIA")
-    public static class Melhoria extends Card {
-
-        private static final Set<Integer> FIBONACCI =
-                Set.of(1, 2, 3, 5, 8, 13);
-
-        private Integer storyPoints;
-
-        protected Melhoria() {
-        }
-
-        public Melhoria(
-                String titulo,
-                String descricao,
-                Prioridade prioridade,
-                Integer storyPoints
-        ) {
-            super(titulo, descricao, prioridade);
-            definirStoryPoints(storyPoints);
-        }
-
-        public void definirStoryPoints(Integer pontos) {
-            if (pontos == null || !FIBONACCI.contains(pontos)) {
-                throw new IllegalArgumentException(
-                        "Story points devem ser 1, 2, 3, 5, 8 ou 13"
-                );
-            }
-
-            this.storyPoints = pontos;
-        }
-
-        @Override
-        public int esforco() {
-            return storyPoints;
-        }
-
-        @Override
-        public String getTipo() {
-            return "MELHORIA";
-        }
-
-        public Integer getStoryPoints() {
-            return storyPoints;
-        }
     }
 }

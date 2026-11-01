@@ -1,13 +1,14 @@
 package br.insper.edu.kanban.model;
 
 import jakarta.persistence.*;
+import java.util.UUID;
 
 @Entity
 public class ItemChecklist {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
     @Column(nullable = false, length = 1000)
     private String descricao;
@@ -23,6 +24,16 @@ public class ItemChecklist {
     }
 
     ItemChecklist(String descricao, Checklist checklist) {
+        editar(descricao, false);
+
+        if (checklist == null) {
+            throw new IllegalArgumentException("Checklist obrigatório");
+        }
+
+        this.checklist = checklist;
+    }
+
+    public void editar(String descricao, boolean concluido) {
         if (descricao == null || descricao.isBlank()) {
             throw new IllegalArgumentException("Descrição obrigatória");
         }
@@ -31,12 +42,8 @@ public class ItemChecklist {
             throw new IllegalArgumentException("Descrição muito longa");
         }
 
-        if (checklist == null) {
-            throw new IllegalArgumentException("Checklist obrigatório");
-        }
-
         this.descricao = descricao.trim();
-        this.checklist = checklist;
+        this.concluido = concluido;
     }
 
     public void concluir() {
@@ -47,7 +54,7 @@ public class ItemChecklist {
         concluido = false;
     }
 
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
 

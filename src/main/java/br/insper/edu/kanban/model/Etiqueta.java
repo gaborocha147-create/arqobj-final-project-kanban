@@ -1,49 +1,56 @@
 package br.insper.edu.kanban.model;
 
-import java.util.List;
+import jakarta.persistence.*;
 
+import java.util.UUID;
+
+@Entity
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"id_quadro", "nome"}))
 public class Etiqueta {
-    private int id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
+
+    @Column(nullable = false)
     private String nome;
+
+    @Column(nullable = false, length = 7)
     private String cor;
 
-    public Etiqueta(int id, String nome, String cor) {
-        this.id = id;
-        this.nome = nome;
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "id_quadro", nullable = false)
+    private Quadro quadro;
+
+    protected Etiqueta() {}
+
+    public Etiqueta(String nome, String cor, Quadro quadro) {
+        this.quadro = quadro;
+        editar(nome, cor);
+    }
+
+    public void editar(String nome, String cor) {
+        if (nome == null || nome.isBlank() || nome.trim().length() > 255)
+            throw new IllegalArgumentException(
+                    "Nome da etiqueta obrigatório, com até 255 caracteres");
+        if (cor == null || !cor.matches("#[0-9a-fA-F]{6}"))
+            throw new IllegalArgumentException("Cor deve usar o formato #RRGGBB");
+        this.nome = nome.trim();
         this.cor = cor;
     }
 
-    public static List<Etiqueta> etiquetasPadrao() {
-        return List.of(
-                new Etiqueta(1, "Muito Baixa", "#4CAF50"),
-                new Etiqueta(2, "Baixa", "#2196F3"),
-                new Etiqueta(3, "Média", "#FFC107"),
-                new Etiqueta(4, "Alta", "#FF9800"),
-                new Etiqueta(5, "Urgente", "#F44336")
-        );
-    }
-
-    public int getId() {
+    public UUID getId() {
         return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
     }
 
     public String getNome() {
         return nome;
     }
 
-    public void setNome(String nome) {
-        this.nome = nome;
-    }
-
     public String getCor() {
         return cor;
     }
 
-    public void setCor(String cor) {
-        this.cor = cor;
+    public Quadro getQuadro() {
+        return quadro;
     }
 }

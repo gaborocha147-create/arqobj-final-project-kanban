@@ -1,5 +1,6 @@
 package br.insper.edu.kanban.usuario;
 
+import br.insper.edu.kanban.common.RecursoNaoEncontradoException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -21,6 +22,11 @@ public class UsuarioService implements UserDetailsService {
     public UsuarioService(UsuarioRepository repository, PasswordEncoder encoder) {
         this.repository = repository;
         this.encoder = encoder;
+    }
+
+    public Usuario buscarPorEmail(String email) {
+        return repository.findByEmail(normalizar(email))
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Usuário não encontrado"));
     }
 
     private String normalizar(String email) {

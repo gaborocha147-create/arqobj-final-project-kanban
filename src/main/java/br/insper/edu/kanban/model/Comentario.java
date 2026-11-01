@@ -2,6 +2,7 @@ package br.insper.edu.kanban.model;
 
 import br.insper.edu.kanban.usuario.Usuario;
 import jakarta.persistence.*;
+import java.util.UUID;
 
 import java.time.LocalDateTime;
 
@@ -9,8 +10,8 @@ import java.time.LocalDateTime;
 public class Comentario {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
     @Column(nullable = false, length = 2000)
     private String texto;
@@ -57,7 +58,7 @@ public class Comentario {
         this.dataAtualizacao = LocalDateTime.now();
     }
 
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
 

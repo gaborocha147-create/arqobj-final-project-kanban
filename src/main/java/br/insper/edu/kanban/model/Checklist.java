@@ -1,6 +1,7 @@
 package br.insper.edu.kanban.model;
 
 import jakarta.persistence.*;
+import java.util.UUID;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -9,8 +10,8 @@ import java.util.List;
 public class Checklist {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
     @Column(nullable = false)
     private String titulo;
@@ -31,6 +32,16 @@ public class Checklist {
     }
 
     Checklist(String titulo, Card card) {
+        renomear(titulo);
+
+        if (card == null) {
+            throw new IllegalArgumentException("Card obrigatório");
+        }
+
+        this.card = card;
+    }
+
+    public void renomear(String titulo) {
         if (titulo == null || titulo.isBlank()) {
             throw new IllegalArgumentException("Título obrigatório");
         }
@@ -39,12 +50,11 @@ public class Checklist {
             throw new IllegalArgumentException("Título muito longo");
         }
 
-        if (card == null) {
-            throw new IllegalArgumentException("Card obrigatório");
-        }
-
         this.titulo = titulo.trim();
-        this.card = card;
+    }
+
+    public void removerItem(ItemChecklist item) {
+        itens.remove(item);
     }
 
     public ItemChecklist adicionarItem(String descricao) {
@@ -65,7 +75,7 @@ public class Checklist {
         return concluidos * 100.0 / itens.size();
     }
 
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
 

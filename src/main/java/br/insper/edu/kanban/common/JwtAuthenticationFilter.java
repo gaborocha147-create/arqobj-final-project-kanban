@@ -1,6 +1,6 @@
 package br.insper.edu.kanban.common;
 
-import br.insper.edu.kanban.service.JwtService;
+import br.insper.edu.kanban.usuario.JwtService;
 import br.insper.edu.kanban.usuario.UsuarioService;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
