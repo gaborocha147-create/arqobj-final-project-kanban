@@ -7,24 +7,26 @@ import jakarta.validation.constraints.*;
 import java.util.UUID;
 
 public class MembroQuadroRequest {
-    @NotNull
-    private UUID usuarioId;
+    @NotBlank
+    @Email
+    @Size(max = 254)
+    private String email;
     @NotNull
     private MembroQuadro.Papel papel;
 
     public MembroQuadroRequest() {}
 
-    public MembroQuadroRequest(UUID usuarioId, MembroQuadro.Papel papel) {
-        this.usuarioId = usuarioId;
+    public MembroQuadroRequest(String email, MembroQuadro.Papel papel) {
+        this.email = email;
         this.papel = papel;
     }
 
-    public UUID getUsuarioId() {
-        return usuarioId;
+    public String getEmail() {
+        return email;
     }
 
-    public void setUsuarioId(UUID usuarioId) {
-        this.usuarioId = usuarioId;
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public MembroQuadro.Papel getPapel() {

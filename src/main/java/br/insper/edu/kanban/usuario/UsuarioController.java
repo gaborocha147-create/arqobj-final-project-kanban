@@ -2,12 +2,17 @@ package br.insper.edu.kanban.usuario;
 
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
+import java.security.Principal;
 
 @RestController
 public class UsuarioController {
@@ -31,5 +36,16 @@ public class UsuarioController {
     @SecurityRequirements
     public LoginResponse login(@Valid @RequestBody LoginRequest dados) {
         return new LoginResponse(jwtService.generateToken(service.autenticar(dados.getEmail(), dados.getSenha())), "Bearer");
+    }
+
+    @GetMapping("/usuarios/me")
+    public UsuarioView eu(Principal principal) {
+        return new UsuarioView(service.buscarPorEmail(principal.getName()));
+    }
+
+    @PutMapping("/usuarios/me/senha")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void alterarSenha(@Valid @RequestBody AlterarSenhaRequest dados, Principal principal) {
+        service.alterarSenha(principal.getName(), dados.getSenhaAtual(), dados.getNovaSenha());
     }
 }

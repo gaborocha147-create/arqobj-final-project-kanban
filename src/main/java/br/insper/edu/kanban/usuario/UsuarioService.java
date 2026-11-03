@@ -62,6 +62,17 @@ public class UsuarioService implements UserDetailsService {
         return usuario.getEmail();
     }
 
+    @Transactional
+    public void alterarSenha(String email, String senhaAtual, String novaSenha) {
+        validarSenha(novaSenha);
+        Usuario usuario = buscarPorEmail(email);
+        if (!encoder.matches(senhaAtual, usuario.getSenha())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Senha atual incorreta");
+        }
+        usuario.setSenha(encoder.encode(novaSenha));
+        repository.save(usuario);
+    }
+
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         Usuario usuario = repository.findByEmail(normalizar(email))

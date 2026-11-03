@@ -12,7 +12,7 @@ import br.insper.edu.kanban.model.MembroQuadroRepository;
 import br.insper.edu.kanban.model.Quadro;
 import br.insper.edu.kanban.view.MembroQuadroView;
 import br.insper.edu.kanban.usuario.Usuario;
-import br.insper.edu.kanban.usuario.UsuarioRepository;
+import br.insper.edu.kanban.usuario.UsuarioService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -28,7 +28,7 @@ public class MembroQuadroService {
     @Autowired
     private MembroQuadroRepository membroRepository;
     @Autowired
-    private UsuarioRepository usuarioRepository;
+    private UsuarioService usuarioService;
     @Autowired
     private CardRepository cardRepository;
     @Autowired
@@ -54,14 +54,13 @@ public class MembroQuadroService {
         return new MembroQuadroView(buscarPorId(id, email));
     }
 
-    public MembroQuadroView criar(UUID quadroId, MembroQuadroRequest dados, String email) {
-        quadroService.verificarAdmin(quadroId, email);
-        if (membroRepository.existsByQuadroIdAndUsuarioId(quadroId, dados.getUsuarioId())) {
+    public MembroQuadroView criar(UUID quadroId, MembroQuadroRequest dados, String emailLogado) {
+        quadroService.verificarAdmin(quadroId, emailLogado);
+        Usuario usuario = usuarioService.buscarPorEmail(dados.getEmail());
+        if (membroRepository.existsByQuadroIdAndUsuarioId(quadroId, usuario.getId())) {
             throw new ConflitoException("Usuário já participa do quadro");
         }
-        Usuario usuario = usuarioRepository.findById(dados.getUsuarioId())
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Usuário não encontrado"));
-        Quadro quadro = quadroService.buscarPorId(quadroId, email);
+        Quadro quadro = quadroService.buscarPorId(quadroId, emailLogado);
         MembroQuadro membro = new MembroQuadro(usuario, quadro, dados.getPapel());
         membroRepository.save(membro);
         return new MembroQuadroView(membro);
