@@ -26,6 +26,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getServletPath();
+        return "POST".equals(request.getMethod())
+                && (path.equals("/login") || path.equals("/usuarios"));
+    }
+
+    @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
         String header = request.getHeader("Authorization");
@@ -41,7 +48,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             } catch (JwtException | IllegalArgumentException | UsernameNotFoundException exception) {
                 SecurityContextHolder.clearContext();
-                response.sendError(401, "Token inválido ou expirado");
+                ErroJson.escrever(response, 401, "Token inválido ou expirado");
                 return;
             }
         }

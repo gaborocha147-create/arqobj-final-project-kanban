@@ -115,10 +115,10 @@ public class CardService {
         return new CardView(card);
     }
 
-    public CardView mover(UUID id, UUID destinoId, String email) {
+    public CardView mover(UUID id, UUID destinoId, Integer posicao, String email) {
         Card card = buscarPorId(id, email);
         Coluna destino = colunaService.buscarPorId(destinoId, email);
-        card.moverPara(destino);
+        card.moverPara(destino, posicao);
         cardRepository.save(card);
         return new CardView(card);
     }

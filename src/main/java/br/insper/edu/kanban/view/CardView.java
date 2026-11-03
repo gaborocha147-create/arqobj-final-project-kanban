@@ -21,6 +21,7 @@ public class CardView {
     private Prioridade prioridade;
     private int esforco;
     private UUID colunaId;
+    private int posicao;
     private UsuarioView responsavel;
     private Integer estimativaHoras;
     private Boolean critico;
@@ -39,6 +40,7 @@ public class CardView {
         this.tipo = card.getTipo();
         this.prioridade = card.getPrioridade();
         this.esforco = card.esforco();
+        this.posicao = card.getPosicao();
         this.colunaId = card.getColuna().getId();
         this.dataCriacao = card.getDataCriacao();
         this.dataAtualizacao = card.getDataAtualizacao();
@@ -108,6 +110,14 @@ public class CardView {
 
     public void setEsforco(int esforco) {
         this.esforco = esforco;
+    }
+
+    public int getPosicao() {
+        return posicao;
+    }
+
+    public void setPosicao(int posicao) {
+        this.posicao = posicao;
     }
 
     public UUID getColunaId() {

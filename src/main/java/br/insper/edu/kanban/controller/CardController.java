@@ -58,7 +58,7 @@ public class CardController {
             @PathVariable UUID id,
             @Valid @RequestBody MoverCardRequest dados,
             Principal principal) {
-        return cardService.mover(id, dados.getColunaId(), principal.getName());
+        return cardService.mover(id, dados.getColunaId(), dados.getPosicao(), principal.getName());
     }
 
     @PatchMapping("/cards/{id}/responsavel")

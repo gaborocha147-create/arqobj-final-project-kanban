@@ -25,7 +25,7 @@ public class Coluna {
     private Quadro quadro;
 
     @OneToMany(mappedBy = "coluna", cascade = CascadeType.ALL)
-    @OrderBy("id")
+    @OrderBy("posicao ASC")
     private List<Card> cards = new ArrayList<>();
 
     protected Coluna() {}
@@ -51,6 +51,10 @@ public class Coluna {
     }
 
     public void adicionarCard(Card card) {
+        adicionarCard(card, cards.size());
+    }
+
+    public void adicionarCard(Card card, int posicao) {
         if (cards.contains(card)) {
             return;
         }
@@ -58,11 +62,31 @@ public class Coluna {
             throw new IllegalStateException("A coluna " + nome + " atingiu o limite WIP de " + limiteWip + " cards");
         }
         card.setColuna(this);
-        cards.add(card);
+        cards.add(limitar(posicao), card);
+        renumerar();
     }
 
     public void removerCard(Card card) {
         cards.remove(card);
+        renumerar();
+    }
+
+    public void reposicionarCard(Card card, int posicao) {
+        if (!cards.remove(card)) {
+            throw new IllegalArgumentException("Card não está nesta coluna");
+        }
+        cards.add(limitar(posicao), card);
+        renumerar();
+    }
+
+    private int limitar(int posicao) {
+        return Math.max(0, Math.min(posicao, cards.size()));
+    }
+
+    private void renumerar() {
+        for (int i = 0; i < cards.size(); i++) {
+            cards.get(i).setPosicao(i);
+        }
     }
 
     public boolean pertenceAo(Quadro outro) {

@@ -38,6 +38,9 @@ public abstract class Card {
     @JoinColumn(name = "id_coluna")
     private Coluna coluna;
 
+    @Column(columnDefinition = "integer default 0")
+    private int posicao;
+
     @OneToMany(mappedBy = "card", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("id ASC")
     private List<Checklist> checklists = new ArrayList<>();
@@ -103,19 +106,26 @@ public abstract class Card {
     }
 
     public void moverPara(Coluna destino) {
+        moverPara(destino, null);
+    }
+
+    public void moverPara(Coluna destino, Integer posicao) {
         if (destino == null) {
             throw new IllegalArgumentException("Coluna de destino obrigatória");
-        }
-        if (destino == coluna) {
-            throw new IllegalStateException("O card já está na coluna " + destino.getNome());
         }
         if (!destino.pertenceAo(coluna.getQuadro())) {
             throw new IllegalArgumentException("Não é possível mover o card para outro quadro");
         }
-        Coluna origem = coluna;
-        destino.adicionarCard(this);
-        origem.removerCard(this);
-
+        if (destino == coluna) {
+            if (posicao == null) {
+                throw new IllegalStateException("O card já está na coluna " + destino.getNome());
+            }
+            coluna.reposicionarCard(this, posicao);
+        } else {
+            Coluna origem = coluna;
+            destino.adicionarCard(this, posicao == null ? destino.quantidadeCards() : posicao);
+            origem.removerCard(this);
+        }
         tocar();
     }
 
@@ -205,5 +215,13 @@ public abstract class Card {
 
     public LocalDateTime getDataAtualizacao() {
         return dataAtualizacao;
+    }
+
+    public int getPosicao() {
+        return posicao;
+    }
+
+    void setPosicao(int posicao) {
+        this.posicao = posicao;
     }
 }
