@@ -61,7 +61,7 @@ public class SecurityConfig {
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource(
-            @Value("${app.cors.allowed-origins:http://localhost:5173}") List<String> allowedOrigins) {
+            @Value("${app.cors.allowed-origins:*}") List<String> allowedOrigins) {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(allowedOrigins);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));

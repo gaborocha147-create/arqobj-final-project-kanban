@@ -29,8 +29,8 @@ O Docker compila e executa os testes antes de gerar a imagem final com Java 25.
 
 ### Integracao com o frontend Vercel
 
-O perfil `prod` permite CORS de `https://front-arq-e-obj.vercel.app`.
-Use `CORS_ALLOWED_ORIGINS` para substituir a lista de origens (separadas por virgula).
+CORS permite qualquer origem (`*`) por padrao, incluindo no perfil `prod`.
+Use `CORS_ALLOWED_ORIGINS` para restringir a lista de origens (separadas por virgula).
 No frontend, substitua a URL de exemplo em `vercel.json` pela URL publica do
 Render, mantendo `/:path*` e sem adicionar `/api` ao destino. Alternativamente,
 defina `VITE_API_BASE` com a URL do Render e refaca o deploy do frontend.
