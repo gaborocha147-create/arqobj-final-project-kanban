@@ -5,3 +5,6 @@
 - Gabriel Kenji Nakahara Rocha
 - Marina Lima Antuniassi
 - Eduardo Khaled Chmouri Giordano
+
+Deploy no Render:
+https://arqobj-final-project-kanban.onrender.com
