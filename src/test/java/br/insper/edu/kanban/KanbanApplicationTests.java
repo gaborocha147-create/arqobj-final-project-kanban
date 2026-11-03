@@ -118,11 +118,12 @@ class KanbanApplicationTests {
 
     @Test
     void removeMembroELimpaResponsabilidadeDosCards() throws Exception {
+        String email = UUID.randomUUID() + "@teste.com";
         String usuarioId = enviar("POST", "/usuarios",
-                "{\"email\":\"" + UUID.randomUUID() + "@teste.com\",\"senha\":\"senha-teste\"}", 201)
+                "{\"email\":\"" + email + "\",\"senha\":\"senha-teste\"}", 201)
                 .get("id").asText();
         String membroId = enviar("POST", "/quadros/" + quadroId + "/membros",
-                "{\"usuarioId\":\"" + usuarioId + "\",\"papel\":\"MEMBRO\"}", 201).get("id").asText();
+                "{\"email\":\"" + email + "\",\"papel\":\"MEMBRO\"}", 201).get("id").asText();
         String cardId = criarTarefa(colunaId);
         enviar("PATCH", "/cards/" + cardId + "/responsavel", "{\"usuarioId\":\"" + usuarioId + "\"}", 200);
         enviar("DELETE", "/membros/" + membroId, null, 204);
